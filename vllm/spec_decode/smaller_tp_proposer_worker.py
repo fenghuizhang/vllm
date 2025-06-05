@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 from typing import List, Optional, Set, Tuple
 
 import torch
@@ -8,6 +11,7 @@ from vllm.distributed.parallel_state import (get_tp_group,
                                              patch_tensor_parallel_group)
 from vllm.logger import init_logger
 from vllm.model_executor.layers.sampler import SamplerOutput
+from vllm.model_executor.model_loader.weight_utils import default_weight_loader
 from vllm.sequence import ExecuteModelRequest
 from vllm.spec_decode.interfaces import SpeculativeProposals
 from vllm.spec_decode.multi_step_worker import MultiStepWorker
@@ -49,7 +53,8 @@ class SmallerTpProposerWorker(ProposerWorkerBase):
         """Create a SmallerTpProposerWorker.
 
         Args:
-            worker (MultiStepWorker): an actual worker wrapped with this class
+            worker (~vllm.spec_decode.multi_step_worker.MultiStepWorker): an
+            actual worker wrapped with this class
             draft_ranks (List[int]): if this value is given, only the GPU ranks
             written in this value participate in draft generation
         """
@@ -171,3 +176,21 @@ class SmallerTpProposerWorker(ProposerWorkerBase):
     @property
     def vocab_size(self) -> int:
         return self._worker.vocab_size
+
+    def maybe_load_lm_head_weight(
+        self,
+        lm_head_weight: torch.Tensor,
+    ) -> None:
+        if self._is_dummy:
+            return
+
+        with self._patch_tensor_parallel_group():
+            weight_loader = getattr(
+                self._worker.worker.model_runner.model_runner.model.\
+                    lm_head.weight,
+                "weight_loader",
+                default_weight_loader)
+            weight_loader(
+                self._worker.worker.model_runner.model_runner.model.\
+                    lm_head.weight,
+                lm_head_weight)

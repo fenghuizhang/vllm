@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 from typing import Dict, FrozenSet, List, Optional, Tuple
 
 from vllm.core.block.interfaces import (Block, BlockAllocator, BlockId,
@@ -339,8 +342,10 @@ class CpuGpuBlockAllocator(DeviceAwareBlockAllocator):
         assert device in self._allocators
         return self._allocators[device].get_prefix_cache_hit_rate()
 
-    def reset_prefix_cache(self) -> bool:
-        """Reset prefix cache for all devices."""
+    def reset_prefix_cache(self, device: Optional[Device] = None) -> bool:
+        """Reset prefix cache for specified or all devices."""
+        if device:
+            return self._allocators[device].reset_prefix_cache()
         success = True
         for allocator in self._allocators.values():
             success = success and allocator.reset_prefix_cache()

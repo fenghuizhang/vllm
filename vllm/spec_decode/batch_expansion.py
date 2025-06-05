@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 from array import array
 from itertools import chain, count
 from typing import Iterator, List, Optional, Tuple

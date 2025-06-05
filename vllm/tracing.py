@@ -1,5 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 import os
-from typing import Mapping, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 from vllm.logger import init_logger
 from vllm.utils import run_once

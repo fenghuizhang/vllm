@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import dataclass, fields
@@ -73,6 +76,10 @@ class AttentionBackend(ABC):
         num_kv_heads: int,
         head_size: int,
     ) -> Tuple[int, ...]:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_kv_cache_stride_order() -> Tuple[int, ...]:
         raise NotImplementedError
 
     @staticmethod
@@ -230,10 +237,12 @@ class AttentionMetadataBuilder(ABC, Generic[T]):
 
 class AttentionLayer(Protocol):
 
+    _q_scale: torch.Tensor
     _k_scale: torch.Tensor
     _v_scale: torch.Tensor
     _k_scale_float: float
     _v_scale_float: float
+    _prob_scale: torch.Tensor
 
     def forward(
         self,
@@ -261,6 +270,7 @@ class AttentionImpl(ABC, Generic[T]):
         blocksparse_params: Optional[Dict[str, Any]] = None,
         logits_soft_cap: Optional[float] = None,
         attn_type: str = AttentionType.DECODER,
+        kv_sharing_target_layer_name: Optional[str] = None,
     ) -> None:
         raise NotImplementedError
 
@@ -292,3 +302,7 @@ class MLAAttentionImpl(AttentionImpl[T], Generic[T]):
         output: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         raise NotImplementedError
+
+
+def is_quantized_kv_cache(kv_cache_dtype: str) -> bool:
+    return kv_cache_dtype != "auto"
